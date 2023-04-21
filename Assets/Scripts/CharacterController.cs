@@ -1,64 +1,167 @@
-using System;
-using UnityEditor.Animations;
+using MatteoBenaissaLibrary.SpriteView;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CharacterController : MonoBehaviour
 {
-    public float Speed = 5.0f;
-    private Rigidbody2D _rigidbody;
-    private Animator _animator;
-    
-    [SerializeField] private bool _haveAxe;
-    [SerializeField] private bool _haveM16;
+    public float MoveSpeed = 5.0f;
+    public bool _haveAxe;
+    public bool _haveM16;
     public bool CanTakeWeapon;
-    private static readonly int IsIdle = Animator.StringToHash("isIdle");
 
+    private Vector3 moveDirection;
+
+    private SpriteView _spriteView;
+
+    [SerializeField] private bool CanAttack;
+    [SerializeField] private GameObject CaCBox;
+    [SerializeField] private GameObject M16Origin;
+
+    [SerializeField] private GameObject M16Prefab;
+    [SerializeField] private GameObject AxePrefab;
+
+    public  Collectable _actualCollectable;
+    public bool CanPick;
+    
     private void Start()
     {
-        _rigidbody = GetComponent<Rigidbody2D>();
-        _animator = GetComponent<Animator>();
+        _spriteView = GetComponent<SpriteView>();
+        CanAttack = true;
     }
 
     private void Update()
     {
+        Animate();
 
-        if (_haveAxe || _haveM16)
+        CheckWeapon();
+
+        if (_actualCollectable != null)
+            CanPick = true;
+        
+        if (Input.GetMouseButton(0))
         {
-            CanTakeWeapon = false;
-            if (_haveAxe)
+            Attack();
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            if(_haveAxe || _haveM16)
+                StartThrow();
+
+            else if(CanPick)
             {
                 
             }
+        }
+    }
 
-            if (_haveM16)
+    private void CheckWeapon()
+    {
+        if (_haveAxe || _haveM16)
+        {
+            CanTakeWeapon = false;
+        }
+        else
+        {
+            CanTakeWeapon = true;
+        }
+    }
+
+    private void Animate()
+    {
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
+
+        if (horizontalInput != 0 || verticalInput != 0)
+        {
+            if (_haveAxe == false && _haveM16 == false)
+                _spriteView.PlayState("WalkUnarmed");
+            else
             {
-                
+                if (_haveAxe)
+                    _spriteView.PlayState("WalkAxe");
+                else
+                {
+                    _spriteView.PlayState("WalkM16");
+                }
             }
         }
         else
         {
-            NoWeapon();
+            if (_haveAxe == false && _haveM16 == false)
+                _spriteView.PlayState("Idle");
+            else
+            {
+                if (_haveAxe)
+                    _spriteView.PlayState("IdleAxe");
+                else
+                {
+                    _spriteView.PlayState("IdleM16");
+                }
+            }
+        }
+
+        moveDirection.x = horizontalInput * MoveSpeed * Time.deltaTime;
+        moveDirection.y = verticalInput * MoveSpeed * Time.deltaTime;
+
+        transform.position += moveDirection;
+    }
+
+    private void Attack()
+    {
+        if (CanAttack == true)
+        {
+            CanAttack = false;
+            if (_haveAxe)
+            {
+                _spriteView.PlayAction("AttackAxe");
+                _spriteView.OnActionEnd.AddListener(ResetAttack);
+                CaCBox.GetComponent<Axe>().Attack();
+            }
+            else if (_haveM16)
+            {
+                _spriteView.PlayAction("AttackM16");
+                _spriteView.OnActionEnd.AddListener(ResetAttack);
+                M16Origin.GetComponent<M16>().Attack();
+            }
+            else
+            {
+                CanAttack = true;
+            }
         }
     }
 
-    public void NoWeapon()
+    private void StartThrow()
     {
-        CanTakeWeapon = true;
-        _animator.SetBool(IsIdle, true);
+        if (_haveAxe)
+        {
+            _spriteView.PlayAction("Throw");
+            _spriteView.OnActionEnd.AddListener(Throw);
+        }
+        else if (_haveM16)
+        {
+            _spriteView.PlayAction("Throw");
+            _spriteView.OnActionEnd.AddListener(Throw);
+        }
     }
-    void FixedUpdate()
-    {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
 
-        // Vector2 movement = new Vector2(horizontal, vertical);
-        // _rigidbody.velocity = movement * Speed;
-        //
-        // if (_rigidbody.velocity != Vector2.zero)
-        // {
-        //     transform.up = _rigidbody.velocity.normalized;
-        // }
-        
-        transform.position += new Vector3(horizontal, vertical,0).normalized;
+    private void Throw()
+    {
+        if (_haveAxe)
+        {
+         
+            _haveAxe = false;
+        }
+
+        if (_haveM16)
+        {
+            
+            _haveM16 = false;
+        }
+    }
+    
+    private void ResetAttack()
+    {
+        CanAttack = true;
     }
 }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class Enemy : MonoBehaviour
 {
@@ -35,7 +33,6 @@ public class Enemy : MonoBehaviour
     private void Update()
     {
         CheckState();
-        CheckLife();
     }
 
     private void CheckLife()
@@ -64,7 +61,7 @@ public class Enemy : MonoBehaviour
 
     private void Patrol()
     {
-        transform.position += Vector3.up * (Speed * Time.deltaTime);
+        //transform.position += Vector3.up * (Speed * Time.deltaTime);
         if (_isChangingDirection == false)
             StartCoroutine(ChangeDirection());
     }
@@ -80,6 +77,7 @@ public class Enemy : MonoBehaviour
 
     private void Detect()
     {
+        
     }
 
     private void Attack()
@@ -97,10 +95,12 @@ public class Enemy : MonoBehaviour
     public void TakeDamage()
     {
         Life--;
+        CheckLife();
     }
     
     public void Die()
     {
         _isDead = true;
+        Destroy(gameObject);
     }
 }
